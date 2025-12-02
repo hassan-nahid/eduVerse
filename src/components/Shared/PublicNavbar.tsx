@@ -45,7 +45,7 @@ const PublicNavbar = () => {
 
   const navLinks = [
     { href: '/', label: 'Home' },
-    { href: '/posts', label: 'Posts' },
+    { href: '/feed', label: 'Feed' },
     { href: '/challenges', label: 'Challenges' },
     { href: '/rewards', label: 'Rewards', icon: Users },
     { href: '/leaderboard', label: 'Leaderboard', icon: Trophy },
