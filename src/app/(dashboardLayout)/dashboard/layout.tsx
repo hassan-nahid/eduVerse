@@ -1,9 +1,9 @@
-const CommonLayout = ({ children } : { children: React.ReactNode }) => {
-    return (
-        <>  
-            {children}
-        </>
-    );
-};
+import { UserGuard } from '@/components/guards/UserGuard'
 
-export default CommonLayout;
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return <UserGuard>{children}</UserGuard>
+}

@@ -1,6 +1,9 @@
-const page = () => {
+import LeaderboardClient from '@/components/leaderboard/LeaderboardClient'
+
+export default function LeaderboardPage() {
   return (
-    <div>page</div>
+    <div className="container mx-auto px-4 py-8">
+      <LeaderboardClient />
+    </div>
   )
 }
-export default page

@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { Menu, GraduationCap, LogOut, Settings, BookOpen, Trophy, Bell, Users, Zap, Star, Target, Award } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { Menu, GraduationCap, LogOut, BookOpen, Trophy, Bell, Users, Zap, Star, UserCircle, Settings } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -16,24 +17,15 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { useAuth } from '@/context/AuthContext'
 
 const PublicNavbar = () => {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const pathname = usePathname()
-  
-  // Mock authentication state - replace with your actual auth logic
-  const isAuthenticated = false // TODO: Connect to your auth system
-  const user = {
-    name: 'John Doe',
-    email: 'john@example.com',
-    avatar: '',
-    role: 'student', // or 'admin'
-    points: 2850,
-    level: 12,
-    rank: 'Gold Scholar',
-    streak: 7
-  }
+  const router = useRouter()
+  const { user, isAuthenticated, logout } = useAuth()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -53,6 +45,25 @@ const PublicNavbar = () => {
 
   const isActive = (path: string) => pathname === path
 
+  const handleLogout = async () => {
+    try {
+      await logout()
+      toast.success('Logged out successfully')
+      router.push('/')
+      setIsMobileMenuOpen(false)
+    } catch {
+      toast.error('Failed to logout')
+    }
+  }
+
+  // Get user initials for avatar fallback
+  const getUserInitials = () => {
+    if (!user?.name) return 'U'
+    return user.name.split(' ').map(n => n[0]).join('').toUpperCase()
+  }
+
+  const dashboardLink = user?.role === 'ADMIN' ? '/admin/dashboard' : '/dashboard'
+
   return (
     <header
       className={`sticky top-0 z-50 w-full border-b transition-all duration-300 ${
@@ -61,26 +72,26 @@ const PublicNavbar = () => {
           : 'bg-background'
       }`}
     >
-      <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
+      <nav className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+        <div className="flex h-14 sm:h-16 items-center justify-between gap-2 sm:gap-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2 group">
+          <Link href="/" className="flex items-center space-x-1.5 sm:space-x-2 group shrink-0">
             <div className="relative">
-              <GraduationCap className="h-8 w-8 text-primary transition-transform group-hover:scale-110" />
-              <div className="absolute -top-1 -right-1 h-3 w-3 bg-primary rounded-full animate-pulse" />
+              <GraduationCap className="h-6 w-6 sm:h-8 sm:w-8 text-primary transition-transform group-hover:scale-110" />
+              <div className="absolute -top-1 -right-1 h-2 w-2 sm:h-3 sm:w-3 bg-primary rounded-full animate-pulse" />
             </div>
-            <span className="text-xl font-bold bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            <span className="text-lg sm:text-xl font-bold bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent hidden xs:inline">
               eduVerse
             </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
+          <div className="hidden lg:flex items-center space-x-1">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors relative group ${
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors relative group ${
                   isActive(link.href)
                     ? 'text-primary'
                     : 'text-muted-foreground hover:text-primary'
@@ -97,73 +108,79 @@ const PublicNavbar = () => {
           </div>
 
           {/* Desktop Auth Section */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="hidden md:flex items-center space-x-2 lg:space-x-3 shrink-0">
             {isAuthenticated ? (
               <>
                 {/* Gamification Stats */}
-                <div className="flex items-center space-x-3 px-3 py-1.5 bg-muted/50 rounded-full border">
-                  <div className="flex items-center space-x-1.5">
-                    <Zap className="h-4 w-4 text-yellow-500" />
-                    <span className="text-sm font-semibold">{user.points.toLocaleString()}</span>
-                  </div>
-                  <div className="h-4 w-px bg-border" />
-                  <div className="flex items-center space-x-1.5">
-                    <Star className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-semibold">Lvl {user.level}</span>
-                  </div>
-                  <div className="h-4 w-px bg-border" />
-                  <div className="flex items-center space-x-1.5">
-                    <Target className="h-4 w-4 text-orange-500" />
-                    <span className="text-sm font-semibold">{user.streak} 🔥</span>
-                  </div>
+                <div className="hidden lg:flex items-center space-x-2 px-2.5 py-1.5 bg-muted/50 rounded-full border">
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <div className="flex items-center space-x-1 cursor-help">
+                        <Zap className="h-3.5 w-3.5 text-yellow-500" />
+                        <span className="text-xs font-semibold">{user?.points?.toLocaleString() || 0}</span>
+                      </div>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-2 text-xs">
+                      Points
+                    </PopoverContent>
+                  </Popover>
+                  <div className="h-3.5 w-px bg-border" />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <div className="flex items-center space-x-1 cursor-help">
+                        <Star className="h-3.5 w-3.5 text-primary" />
+                        <span className="text-xs font-semibold">{user?.scores || 0}</span>
+                      </div>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-2 text-xs">
+                      Scores
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
-                {/* Notifications */}
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="h-5 w-5" />
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                {/* Notifications - Desktop */}
+                <Button variant="ghost" size="icon" className="relative h-9 w-9 hidden lg:flex">
+                  <Bell className="h-4 w-4" />
+                  <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
                     3
                   </Badge>
                 </Button>
 
-                {/* User Menu */}
+                {/* User Menu - Desktop (lg and up) */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={user.avatar} alt={user.name} />
-                        <AvatarFallback className="bg-primary text-primary-foreground">
-                          {user.name.split(' ').map(n => n[0]).join('')}
+                    <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0 hidden lg:flex">
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={user?.avatar} alt={user?.name} />
+                        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                          {getUserInitials()}
                         </AvatarFallback>
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-72" align="end" forceMount>
+                  <DropdownMenuContent className="w-64 sm:w-72" align="end" forceMount>
                     <DropdownMenuLabel className="font-normal">
                       <div className="flex items-center space-x-3">
                         <div className="relative">
                           <Avatar className="h-12 w-12 border-2 border-primary">
-                            <AvatarImage src={user.avatar} alt={user.name} />
+                            <AvatarImage src={user?.avatar} alt={user?.name} />
                             <AvatarFallback className="bg-primary text-primary-foreground">
-                              {user.name.split(' ').map(n => n[0]).join('')}
+                              {getUserInitials()}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center border-2 border-background">
-                            {user.level}
-                          </div>
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-semibold">{user.name}</p>
-                          <p className="text-xs text-muted-foreground mb-1">{user.rank}</p>
+                          <p className="text-sm font-semibold">{user?.name}</p>
+                          <p className="text-xs text-muted-foreground mb-1">{user?.role === 'ADMIN' ? 'Admin' : 'Student'}</p>
                           <div className="flex items-center space-x-2 text-xs">
                             <span className="flex items-center">
                               <Zap className="h-3 w-3 text-yellow-500 mr-0.5" />
-                              {user.points.toLocaleString()}
+                              {user?.points?.toLocaleString() || 0}
                             </span>
                             <span>•</span>
                             <span className="flex items-center">
-                              <Target className="h-3 w-3 text-orange-500 mr-0.5" />
-                              {user.streak} day streak
+                              <Star className="h-3 w-3 text-primary mr-0.5" />
+                              {user?.scores || 0}
                             </span>
                           </div>
                         </div>
@@ -171,38 +188,13 @@ const PublicNavbar = () => {
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link href="/dashboard" className="cursor-pointer">
+                      <Link href={dashboardLink} className="cursor-pointer">
                         <BookOpen className="mr-2 h-4 w-4" />
-                        <span>My Learning</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile" className="cursor-pointer">
-                        <Users className="mr-2 h-4 w-4" />
-                        <span>My Profile</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/achievements" className="cursor-pointer">
-                        <Trophy className="mr-2 h-4 w-4" />
-                        <span>Achievements</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/rewards" className="cursor-pointer">
-                        <Award className="mr-2 h-4 w-4" />
-                        <span>My Rewards</span>
+                        <span>My Dashboard</span>
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/settings" className="cursor-pointer">
-                        <Settings className="mr-2 h-4 w-4" />
-                        <span>Settings</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="cursor-pointer text-destructive focus:text-destructive">
+                    <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:text-destructive">
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>Log out</span>
                     </DropdownMenuItem>
@@ -221,57 +213,103 @@ const PublicNavbar = () => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-            <SheetTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="icon">
-                <Menu className="h-6 w-6" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-[300px] sm:w-[400px]">
+          {/* Mobile Menu Section */}
+          <div className="flex lg:hidden items-center gap-1">
+            {isAuthenticated && (
+              <>
+                {/* Notification Bell - Mobile/Tablet (md to lg) */}
+                <Button variant="ghost" size="icon" className="relative h-9 w-9">
+                  <Bell className="h-4 w-4" />
+                  <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
+                    3
+                  </Badge>
+                </Button>
+
+                {/* User Menu - Tablet (md to lg) */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0 hidden md:flex lg:hidden">
+                      <Avatar className="h-9 w-9">
+                        <AvatarImage src={user?.avatar} alt={user?.name} />
+                        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                          {getUserInitials()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-64 sm:w-72" align="end">
+                    <DropdownMenuLabel>
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={user?.avatar} alt={user?.name} />
+                          <AvatarFallback className="bg-primary text-primary-foreground">
+                            {getUserInitials()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-semibold">{user?.name}</p>
+                          <p className="text-xs text-muted-foreground">{user?.email}</p>
+                        </div>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => router.push(user?.role === 'ADMIN' ? '/admin' : '/dashboard')}>
+                      <UserCircle className="mr-2 h-4 w-4" />
+                      <span>Dashboard</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push('/settings')}>
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Logout</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[280px] sm:w-[320px] overflow-y-auto">
               <div className="flex flex-col space-y-6 mt-6">
                 {/* Mobile Logo */}
-                <Link href="/" className="flex items-center space-x-2" onClick={() => setIsMobileMenuOpen(false)}>
+                <Link href="/" className="flex items-center space-x-2 px-2" onClick={() => setIsMobileMenuOpen(false)}>
                   <GraduationCap className="h-6 w-6 text-primary" />
                   <span className="text-lg font-bold">eduVerse</span>
                 </Link>
 
                 {/* Mobile User Info */}
                 {isAuthenticated && (
-                  <div className="space-y-3">
+                  <div className="space-y-3 px-2">
                     <div className="flex items-center space-x-3 p-4 bg-muted rounded-lg">
-                      <div className="relative">
-                        <Avatar className="h-14 w-14 border-2 border-primary">
-                          <AvatarImage src={user.avatar} alt={user.name} />
-                          <AvatarFallback className="bg-primary text-primary-foreground">
-                            {user.name.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center border-2 border-background">
-                          {user.level}
-                        </div>
-                      </div>
+                      <Avatar className="h-14 w-14 border-2 border-primary">
+                        <AvatarImage src={user?.avatar} alt={user?.name} />
+                        <AvatarFallback className="bg-primary text-primary-foreground">
+                          {getUserInitials()}
+                        </AvatarFallback>
+                      </Avatar>
                       <div className="flex-1">
-                        <p className="text-sm font-semibold">{user.name}</p>
-                        <p className="text-xs text-muted-foreground">{user.rank}</p>
+                        <p className="text-sm font-semibold">{user?.name}</p>
+                        <p className="text-xs text-muted-foreground">{user?.role === 'ADMIN' ? 'Admin' : 'Student'}</p>
                       </div>
                     </div>
                     {/* Mobile Gamification Stats */}
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-2">
                       <div className="p-3 bg-muted rounded-lg text-center">
                         <Zap className="h-5 w-5 text-yellow-500 mx-auto mb-1" />
-                        <p className="text-xs font-semibold">{user.points.toLocaleString()}</p>
+                        <p className="text-xs font-semibold">{user?.points?.toLocaleString() || 0}</p>
                         <p className="text-xs text-muted-foreground">Points</p>
                       </div>
                       <div className="p-3 bg-muted rounded-lg text-center">
                         <Star className="h-5 w-5 text-primary mx-auto mb-1" />
-                        <p className="text-xs font-semibold">Level {user.level}</p>
-                        <p className="text-xs text-muted-foreground">Progress</p>
-                      </div>
-                      <div className="p-3 bg-muted rounded-lg text-center">
-                        <Target className="h-5 w-5 text-orange-500 mx-auto mb-1" />
-                        <p className="text-xs font-semibold">{user.streak} 🔥</p>
-                        <p className="text-xs text-muted-foreground">Streak</p>
+                        <p className="text-xs font-semibold">{user?.scores || 0}</p>
+                        <p className="text-xs text-muted-foreground">Scores</p>
                       </div>
                     </div>
                   </div>
@@ -284,7 +322,7 @@ const PublicNavbar = () => {
                       key={link.href}
                       href={link.href}
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className={`px-4 py-3 rounded-md text-sm font-medium transition-colors ${
+                      className={`px-4 py-2.5 rounded-md text-sm font-medium transition-colors ${
                         isActive(link.href)
                           ? 'bg-primary text-primary-foreground'
                           : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -299,30 +337,12 @@ const PublicNavbar = () => {
                 {isAuthenticated ? (
                   <div className="flex flex-col space-y-2 pt-4 border-t">
                     <Button variant="outline" asChild className="w-full justify-start">
-                      <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+                      <Link href={dashboardLink} onClick={() => setIsMobileMenuOpen(false)}>
                         <BookOpen className="mr-2 h-4 w-4" />
-                        My Learning
+                        My Dashboard
                       </Link>
                     </Button>
-                    <Button variant="outline" asChild className="w-full justify-start">
-                      <Link href="/achievements" onClick={() => setIsMobileMenuOpen(false)}>
-                        <Trophy className="mr-2 h-4 w-4" />
-                        Achievements
-                      </Link>
-                    </Button>
-                    <Button variant="outline" asChild className="w-full justify-start">
-                      <Link href="/profile" onClick={() => setIsMobileMenuOpen(false)}>
-                        <Users className="mr-2 h-4 w-4" />
-                        My Profile
-                      </Link>
-                    </Button>
-                    <Button variant="outline" asChild className="w-full justify-start">
-                      <Link href="/settings" onClick={() => setIsMobileMenuOpen(false)}>
-                        <Settings className="mr-2 h-4 w-4" />
-                        Settings
-                      </Link>
-                    </Button>
-                    <Button variant="destructive" className="w-full justify-start">
+                    <Button onClick={handleLogout} variant="destructive" className="w-full justify-start">
                       <LogOut className="mr-2 h-4 w-4" />
                       Log out
                     </Button>
@@ -340,6 +360,7 @@ const PublicNavbar = () => {
               </div>
             </SheetContent>
           </Sheet>
+          </div>
         </div>
       </nav>
     </header>
