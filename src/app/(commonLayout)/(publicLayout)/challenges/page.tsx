@@ -1,6 +1,7 @@
-const page = () => {
-  return (
-    <div>page</div>
-  )
-}
-export default page
+import ChallengesQuizzes from '@/components/challenges/ChallengesQuizzes';
+
+const ChallengePage = () => {
+  return <ChallengesQuizzes />;
+};
+
+export default ChallengePage;
