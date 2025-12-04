@@ -11,6 +11,7 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
+  X,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -179,6 +180,16 @@ export const UserManagement = () => {
     );
   };
 
+  const clearFilters = () => {
+    setSearchTerm('');
+    setRoleFilter('ALL');
+    setStatusFilter('ALL');
+    setSortBy('createdAt');
+    setSortOrder('desc');
+    setCurrentPage(1);
+    toast.success('Filters cleared');
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Page Header */}
@@ -204,7 +215,18 @@ export const UserManagement = () => {
       {/* Filters and Search */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base sm:text-lg">Filters</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base sm:text-lg">Filters</CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="text-xs h-8"
+            >
+              <X className="h-3 w-3 mr-1" />
+              Clear Filters
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
