@@ -61,14 +61,9 @@ const navItems: NavItem[] = [
     icon: Gift,
   },
   {
-    title: 'Payments',
-    href: '/admin/dashboard/payments',
+    title: 'Subscriptions',
+    href: '/admin/dashboard/subscriptions',
     icon: DollarSign,
-  },
-  {
-    title: 'Notifications',
-    href: '/admin/dashboard/notifications',
-    icon: Bell,
   },
   {
     title: 'Reports',
@@ -79,11 +74,6 @@ const navItems: NavItem[] = [
     title: 'Verification',
     href: '/admin/dashboard/verification',
     icon: UserCheck,
-  },
-  {
-    title: 'Comments',
-    href: '/admin/dashboard/comments',
-    icon: MessageSquare,
   },
   {
     title: 'Settings',
