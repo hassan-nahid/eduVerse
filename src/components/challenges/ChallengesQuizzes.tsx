@@ -24,15 +24,15 @@ const ChallengesQuizzes = () => {
   const [activeTab, setActiveTab] = useState<'challenges' | 'quizzes'>('challenges');
 
   const loadChallenges = useCallback(async () => {
-    if (!isAuthenticated) {
-      setIsLoadingChallenges(false);
-      return;
-    }
-
     try {
       setIsLoadingChallenges(true);
-      const data = await challengeService.getAllChallenges();
-      setChallenges(data);
+      if (isAuthenticated) {
+        const data = await challengeService.getAllChallenges();
+        setChallenges(data);
+      } else {
+        // For unauthenticated users, show empty state
+        setChallenges([]);
+      }
     } catch (error) {
       console.error('Failed to load challenges:', error);
       const errorMessage = error && typeof error === 'object' && 'message' in error 
@@ -45,15 +45,15 @@ const ChallengesQuizzes = () => {
   }, [isAuthenticated]);
 
   const loadQuizzes = useCallback(async () => {
-    if (!isAuthenticated) {
-      setIsLoadingQuizzes(false);
-      return;
-    }
-
     try {
       setIsLoadingQuizzes(true);
-      const data = await quizService.getAllQuizzes();
-      setQuizzes(data);
+      if (isAuthenticated) {
+        const data = await quizService.getAllQuizzes();
+        setQuizzes(data);
+      } else {
+        // For unauthenticated users, show empty state
+        setQuizzes([]);
+      }
     } catch (error) {
       console.error('Failed to load quizzes:', error);
       const errorMessage = error && typeof error === 'object' && 'message' in error 
@@ -66,16 +66,14 @@ const ChallengesQuizzes = () => {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      loadChallenges();
-      loadQuizzes();
-    }
+    loadChallenges();
+    loadQuizzes();
   }, [isAuthenticated, loadChallenges, loadQuizzes]);
 
   const handleChallengeClick = (challengeId: string) => {
     if (!isAuthenticated) {
-      toast.error('Please login to view challenge details');
-      router.push('/login');
+      toast.error('Please login to participate in challenges');
+      router.push('/auth/login');
       return;
     }
     router.push(`/challenges/${challengeId}`);
@@ -84,7 +82,7 @@ const ChallengesQuizzes = () => {
   const handleQuizClick = (quizId: string) => {
     if (!isAuthenticated) {
       toast.error('Please login to take quizzes');
-      router.push('/login');
+      router.push('/auth/login');
       return;
     }
     router.push(`/quiz/${quizId}`);
@@ -96,18 +94,6 @@ const ChallengesQuizzes = () => {
     const daysUntilEnd = (end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
     return daysUntilEnd <= 3 && daysUntilEnd > 0;
   };
-
-  if (!isAuthenticated) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-bold mb-4">Authentication Required</h2>
-          <p className="text-muted-foreground mb-6">Please login to view challenges and quizzes</p>
-          <Button onClick={() => router.push('/login')}>Login</Button>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -163,8 +149,11 @@ const ChallengesQuizzes = () => {
           ) : challenges.length === 0 ? (
             <div className="text-center py-12">
               <Trophy className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No Active Challenges</h3>
-              <p className="text-muted-foreground">Check back later for new challenges!</p>
+              <h3 className="text-xl font-semibold mb-2">{isAuthenticated ? 'No Active Challenges' : 'Login to View Challenges'}</h3>
+              <p className="text-muted-foreground mb-4">{isAuthenticated ? 'Check back later for new challenges!' : 'Please login to view and participate in challenges'}</p>
+              {!isAuthenticated && (
+                <Button onClick={() => router.push('/auth/login')}>Login</Button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -261,8 +250,11 @@ const ChallengesQuizzes = () => {
           ) : quizzes.length === 0 ? (
             <div className="text-center py-12">
               <Trophy className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No Quizzes Available</h3>
-              <p className="text-muted-foreground">Check back later for new quizzes!</p>
+              <h3 className="text-xl font-semibold mb-2">{isAuthenticated ? 'No Quizzes Available' : 'Login to View Quizzes'}</h3>
+              <p className="text-muted-foreground mb-4">{isAuthenticated ? 'Check back later for new quizzes!' : 'Please login to view and take quizzes'}</p>
+              {!isAuthenticated && (
+                <Button onClick={() => router.push('/auth/login')}>Login</Button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

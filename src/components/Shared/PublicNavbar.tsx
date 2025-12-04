@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { Menu, GraduationCap, LogOut, BookOpen, Trophy, Bell, Users, Zap, Star, UserCircle, Settings } from 'lucide-react'
+import { Menu, GraduationCap, LogOut, BookOpen, Trophy, Users, Zap, Star, UserCircle, Settings } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useAuth } from '@/context/AuthContext'
+import NotificationDropdown from '@/components/notifications/NotificationDropdown'
 
 const PublicNavbar = () => {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -139,12 +140,9 @@ const PublicNavbar = () => {
                 </div>
 
                 {/* Notifications - Desktop */}
-                <Button variant="ghost" size="icon" className="relative h-9 w-9 hidden lg:flex">
-                  <Bell className="h-4 w-4" />
-                  <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
-                    3
-                  </Badge>
-                </Button>
+                <div className="hidden lg:flex">
+                  <NotificationDropdown />
+                </div>
 
                 {/* User Menu - Desktop (lg and up) */}
                 <DropdownMenu>
@@ -218,12 +216,7 @@ const PublicNavbar = () => {
             {isAuthenticated && (
               <>
                 {/* Notification Bell - Mobile/Tablet (md to lg) */}
-                <Button variant="ghost" size="icon" className="relative h-9 w-9">
-                  <Bell className="h-4 w-4" />
-                  <Badge className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center p-0 text-[10px]">
-                    3
-                  </Badge>
-                </Button>
+                <NotificationDropdown />
 
                 {/* User Menu - Tablet (md to lg) */}
                 <DropdownMenu>

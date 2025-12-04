@@ -98,7 +98,7 @@ export default function FeedClient() {
   const handleLoveReaction = async (postId: string) => {
     if (!isAuthenticated) {
       toast.error('Please login to react to posts')
-      router.push('/login')
+      router.push('/auth/login')
       return
     }
 
@@ -118,7 +118,7 @@ export default function FeedClient() {
   const handleAddComment = async (postId: string, commentText: string) => {
     if (!isAuthenticated) {
       toast.error('Please login to comment on posts')
-      router.push('/login')
+      router.push('/auth/login')
       return
     }
 

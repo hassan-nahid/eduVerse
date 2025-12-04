@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Trophy, Clock, CheckCircle, XCircle, Lock, Users } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -29,8 +29,8 @@ const QuizDetail = ({ quizId }: QuizDetailProps) => {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      toast.error('Please login to view quizzes');
-      router.push('/login');
+      toast.error('Please login to take quizzes');
+      router.push('/auth/login');
       return;
     }
     loadQuiz();

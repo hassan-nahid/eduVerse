@@ -1,6 +1,7 @@
+import RewardsPage from '@/components/rewards/RewardsPage';
+
 const page = () => {
-  return (
-    <div>page</div>
-  )
-}
-export default page
+  return <RewardsPage />;
+};
+
+export default page;
