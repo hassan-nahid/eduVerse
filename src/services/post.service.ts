@@ -20,9 +20,10 @@ export interface Post {
   postTitle?: string
   postBody?: string
   postImage?: string
-  userId: PostUser
+  userId: PostUser | null
   loveReactions: PostUser[]
   comments: Comment[]
+  reports?: unknown[]
   challengeId?: string
   status: 'PUBLISHED' | 'PRIVATE' | 'DRAFT'
   createdAt: string
@@ -36,6 +37,16 @@ export interface GetPostsResponse {
     lastId: string | null
     count: number
   }
+}
+
+export interface AdminGetPostsResponse {
+  data: Post[];
+  meta?: {
+    page?: number;
+    limit?: number;
+    total?: number;
+    totalPage?: number;
+  };
 }
 
 export const postService = {
@@ -83,5 +94,26 @@ export const postService = {
   async getSinglePost(postId: string) {
     const response = await apiClient.get<Post>(`/post/${postId}`)
     return response.data
+  },
+
+  // Admin: Get all posts with pagination
+  async adminGetAllPosts(params: Record<string, string>): Promise<AdminGetPostsResponse> {
+    const queryString = new URLSearchParams(params).toString();
+    const response = await apiClient.get<Post[]>(`/post/admin/all?${queryString}`);
+    
+    return {
+      data: response.data,
+      meta: response.meta,
+    };
+  },
+
+  // Admin: Delete post
+  async deletePost(postId: string) {
+    return apiClient.delete<null>(`/post/${postId}`);
+  },
+
+  // Admin: Update post status
+  async updatePostStatus(postId: string, status: string) {
+    return apiClient.patch<Post>(`/post/${postId}`, { status });
   }
 }
