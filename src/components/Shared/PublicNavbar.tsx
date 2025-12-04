@@ -15,7 +15,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Badge } from '@/components/ui/badge'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { useAuth } from '@/context/AuthContext'
@@ -169,7 +168,7 @@ const PublicNavbar = () => {
                         </div>
                         <div className="flex-1">
                           <p className="text-sm font-semibold">{user?.name}</p>
-                          <p className="text-xs text-muted-foreground mb-1">{user?.role === 'ADMIN' ? 'Admin' : 'Student'}</p>
+                          <p className="text-xs text-muted-foreground mb-1">{user?.role === 'ADMIN' ? 'Admin' : 'Explorer'}</p>
                           <div className="flex items-center space-x-2 text-xs">
                             <span className="flex items-center">
                               <Zap className="h-3 w-3 text-yellow-500 mr-0.5" />
