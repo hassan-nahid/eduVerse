@@ -33,34 +33,40 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Plus,
   Edit,
-  Trash2,
   RefreshCw,
   Award,
-  Eye,
-  EyeOff,
   Search,
   X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { rewardService, Reward, RewardType } from "@/services/reward.service";
 import { toast } from "sonner";
 import Image from "next/image";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
 
 const RewardManagement = () => {
   const [rewards, setRewards] = useState<Reward[]>([]);
-  const [filteredRewards, setFilteredRewards] = useState<Reward[]>([]);
   const [loading, setLoading] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
+  // Pagination and meta
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageLimit, setPageLimit] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalRewards, setTotalRewards] = useState(0);
+
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchTerm, setSearchTerm] = useState(""); // Debounced search term
   const [typeFilter, setTypeFilter] = useState<RewardType | "ALL">("ALL");
   const [statusFilter, setStatusFilter] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
   const [premiumFilter, setPremiumFilter] = useState<"ALL" | "PREMIUM" | "FREE">("ALL");
+  const [sortField, setSortField] = useState("-createdAt");
 
   // Form state
   const [formData, setFormData] = useState({
@@ -77,9 +83,36 @@ const RewardManagement = () => {
   const fetchRewards = async () => {
     setLoading(true);
     try {
-      const data = await rewardService.getAllRewards();
-      setRewards(data);
-      setFilteredRewards(data);
+      const params: Record<string, string | number | boolean | undefined> = {
+        page: currentPage,
+        limit: pageLimit,
+        sort: sortField,
+      };
+
+      if (searchTerm.trim()) {
+        params.searchTerm = searchTerm.trim();
+      }
+
+      if (typeFilter !== "ALL") {
+        params.type = typeFilter;
+      }
+
+      if (statusFilter === "ACTIVE") {
+        params.isActive = true;
+      } else if (statusFilter === "INACTIVE") {
+        params.isActive = false;
+      }
+
+      if (premiumFilter === "PREMIUM") {
+        params.isPremiumOnly = true;
+      } else if (premiumFilter === "FREE") {
+        params.isPremiumOnly = false;
+      }
+
+      const response = await rewardService.adminGetAllRewards(params);
+      setRewards(response.data);
+      setTotalPages(response.meta.totalPage);
+      setTotalRewards(response.meta.total);
     } catch (error) {
       console.error("Error fetching rewards:", error);
       toast.error("Failed to fetch rewards");
@@ -88,41 +121,47 @@ const RewardManagement = () => {
     }
   };
 
+  // Debounce search input
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchTerm(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   useEffect(() => {
     fetchRewards();
-  }, []);
+  }, [currentPage, pageLimit, sortField, searchTerm, typeFilter, statusFilter, premiumFilter]);
 
-  // Apply filters
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setCurrentPage(1); // Reset to first page on search
+  };
+
+  const handleFilterChange = () => {
+    setCurrentPage(1); // Reset to first page on filter change
+  };
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setTypeFilter("ALL");
+    setStatusFilter("ALL");
+    setPremiumFilter("ALL");
+    setSortField("-createdAt");
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  // Apply filters - removed local filtering, now using server-side
   useEffect(() => {
-    let filtered = [...rewards];
-
-    // Search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter((r) =>
-        r.name.toLowerCase().includes(query) ||
-        r.description?.toLowerCase().includes(query)
-      );
-    }
-
-    if (typeFilter !== "ALL") {
-      filtered = filtered.filter((r) => r.type === typeFilter);
-    }
-
-    if (statusFilter === "ACTIVE") {
-      filtered = filtered.filter((r) => r.isActive);
-    } else if (statusFilter === "INACTIVE") {
-      filtered = filtered.filter((r) => !r.isActive);
-    }
-
-    if (premiumFilter === "PREMIUM") {
-      filtered = filtered.filter((r) => r.isPremiumOnly);
-    } else if (premiumFilter === "FREE") {
-      filtered = filtered.filter((r) => !r.isPremiumOnly);
-    }
-
-    setFilteredRewards(filtered);
-  }, [searchQuery, typeFilter, statusFilter, premiumFilter, rewards]);
+    handleFilterChange();
+  }, [typeFilter, statusFilter, premiumFilter]);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -166,11 +205,6 @@ const RewardManagement = () => {
     });
     setImagePreview(reward.image || "");
     setIsEditDialogOpen(true);
-  };
-
-  const handleDeleteClick = (reward: Reward) => {
-    setSelectedReward(reward);
-    setIsDeleteDialogOpen(true);
   };
 
   const handleCreate = async () => {
@@ -251,18 +285,18 @@ const RewardManagement = () => {
     }
   };
 
-  const handleDelete = async () => {
-    if (!selectedReward) return;
-
-    setProcessingId(selectedReward._id);
+  const handleToggleStatus = async (reward: Reward) => {
+    setProcessingId(reward._id);
     try {
-      await rewardService.adminDeleteReward(selectedReward._id);
-      toast.success("Reward deleted successfully");
-      setIsDeleteDialogOpen(false);
+      const data = new FormData();
+      data.append("isActive", (!reward.isActive).toString());
+      
+      await rewardService.adminUpdateReward(reward._id, data);
+      toast.success(`Reward ${!reward.isActive ? 'activated' : 'deactivated'} successfully`);
       fetchRewards();
     } catch (error) {
-      console.error("Error deleting reward:", error);
-      toast.error("Failed to delete reward");
+      console.error("Error toggling reward status:", error);
+      toast.error("Failed to update reward status");
     } finally {
       setProcessingId(null);
     }
@@ -292,14 +326,6 @@ const RewardManagement = () => {
     });
   };
 
-  const clearFilters = () => {
-    setSearchQuery("");
-    setTypeFilter("ALL");
-    setStatusFilter("ALL");
-    setPremiumFilter("ALL");
-    toast.success("Filters cleared");
-  };
-
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
@@ -307,7 +333,7 @@ const RewardManagement = () => {
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Reward Management</h1>
           <p className="text-sm sm:text-base text-muted-foreground mt-1">
-            Create and manage rewards for users to claim ({filteredRewards.length} rewards)
+            Create and manage rewards for users to claim ({totalRewards} total)
           </p>
         </div>
         <div className="flex gap-2">
@@ -345,22 +371,28 @@ const RewardManagement = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
             {/* Search */}
-            <div className="lg:col-span-1">
-              <Input
-                type="text"
-                placeholder="Search rewards..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full"
-              />
+            <div className="lg:col-span-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search by name, description, or type..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
             </div>
 
             {/* Type Filter */}
             <Select
               value={typeFilter}
-              onValueChange={(value) => setTypeFilter(value as RewardType | "ALL")}
+              onValueChange={(value) => {
+                setTypeFilter(value as RewardType | "ALL");
+                handleFilterChange();
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Type" />
@@ -377,7 +409,10 @@ const RewardManagement = () => {
             {/* Status Filter */}
             <Select
               value={statusFilter}
-              onValueChange={(value) => setStatusFilter(value as "ALL" | "ACTIVE" | "INACTIVE")}
+              onValueChange={(value) => {
+                setStatusFilter(value as "ALL" | "ACTIVE" | "INACTIVE");
+                handleFilterChange();
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Status" />
@@ -392,7 +427,10 @@ const RewardManagement = () => {
             {/* Access Filter */}
             <Select
               value={premiumFilter}
-              onValueChange={(value) => setPremiumFilter(value as "ALL" | "PREMIUM" | "FREE")}
+              onValueChange={(value) => {
+                setPremiumFilter(value as "ALL" | "PREMIUM" | "FREE");
+                handleFilterChange();
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Access" />
@@ -401,6 +439,27 @@ const RewardManagement = () => {
                 <SelectItem value="ALL">All Access</SelectItem>
                 <SelectItem value="PREMIUM">Premium Only</SelectItem>
                 <SelectItem value="FREE">Free</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Sort Options */}
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Sort by:</span>
+            <Select
+              value={sortField}
+              onValueChange={(value) => setSortField(value)}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="-createdAt">Newest First</SelectItem>
+                <SelectItem value="createdAt">Oldest First</SelectItem>
+                <SelectItem value="name">Name (A-Z)</SelectItem>
+                <SelectItem value="-name">Name (Z-A)</SelectItem>
+                <SelectItem value="pointPrice">Price (Low to High)</SelectItem>
+                <SelectItem value="-pointPrice">Price (High to Low)</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -429,14 +488,14 @@ const RewardManagement = () => {
                   Loading...
                 </TableCell>
               </TableRow>
-            ) : filteredRewards.length === 0 ? (
+            ) : rewards.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="text-center py-8">
                   No rewards found
                 </TableCell>
               </TableRow>
             ) : (
-              filteredRewards.map((reward) => (
+              rewards.map((reward: Reward) => (
                 <TableRow key={reward._id}>
                   <TableCell>
                     {reward.image ? (
@@ -476,12 +535,10 @@ const RewardManagement = () => {
                   <TableCell>
                     {reward.isActive ? (
                       <Badge variant="default" className="bg-green-500">
-                        <Eye className="h-3 w-3 mr-1" />
                         Active
                       </Badge>
                     ) : (
                       <Badge variant="secondary">
-                        <EyeOff className="h-3 w-3 mr-1" />
                         Inactive
                       </Badge>
                     )}
@@ -490,7 +547,7 @@ const RewardManagement = () => {
                     {formatDate(reward.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-2 items-center">
                       <Button
                         variant="ghost"
                         size="sm"
@@ -500,15 +557,16 @@ const RewardManagement = () => {
                         <Edit className="h-4 w-4 mr-1" />
                         Edit
                       </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDeleteClick(reward)}
-                        disabled={processingId === reward._id}
-                      >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Delete
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">
+                          {reward.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                        <Switch
+                          checked={reward.isActive}
+                          onCheckedChange={() => handleToggleStatus(reward)}
+                          disabled={processingId === reward._id}
+                        />
+                      </div>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -516,6 +574,60 @@ const RewardManagement = () => {
             )}
           </TableBody>
         </Table>
+
+        {/* Pagination */}
+        {!loading && rewards.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-4 border-t">
+            <div className="text-sm text-muted-foreground">
+              Showing {((currentPage - 1) * pageLimit) + 1} to {Math.min(currentPage * pageLimit, totalRewards)} of {totalRewards} rewards
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Previous
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handlePageChange(pageNum)}
+                      className="w-8 h-8 p-0"
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Create Dialog */}
@@ -771,57 +883,6 @@ const RewardManagement = () => {
             </Button>
             <Button onClick={handleUpdate} disabled={processingId !== null}>
               {processingId ? "Updating..." : "Update Reward"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Reward</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this reward? This will make it inactive
-              but won&apos;t remove it from users who already claimed it.
-            </DialogDescription>
-          </DialogHeader>
-          {selectedReward && (
-            <div className="py-4">
-              <div className="flex items-center gap-3">
-                {selectedReward.image ? (
-                  <div className="relative h-16 w-16 rounded-md overflow-hidden">
-                    <Image
-                      src={selectedReward.image}
-                      alt={selectedReward.name}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div className="h-16 w-16 rounded-md bg-muted flex items-center justify-center">
-                    <Award className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                )}
-                <div>
-                  <div className="font-medium">{selectedReward.name}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {selectedReward.pointPrice} points • {selectedReward.type}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={processingId !== null}
-            >
-              {processingId ? "Deleting..." : "Delete"}
             </Button>
           </DialogFooter>
         </DialogContent>

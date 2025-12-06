@@ -41,6 +41,7 @@ export interface AuthUser {
   premiumExpiryDate?: string;
   createdAt: string;
   updatedAt: string;
+  verifyBadge?: boolean;
 }
 
 export interface LoginResponse {
