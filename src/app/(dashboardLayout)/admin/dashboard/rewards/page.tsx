@@ -1,6 +1,7 @@
+import RewardManagement from "@/components/Admin/RewardManagement";
+
 const RewardsPage = () => {
-  return (
-    <div>RewardsPage</div>
-  )
-}
-export default RewardsPage
+  return <RewardManagement />;
+};
+
+export default RewardsPage;

@@ -11,12 +11,9 @@ import {
   Gift,
   DollarSign,
   Settings,
-  Bell,
   ChevronLeft,
   Menu,
-  BarChart3,
   UserCheck,
-  MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -65,11 +62,7 @@ const navItems: NavItem[] = [
     href: '/admin/dashboard/subscriptions',
     icon: DollarSign,
   },
-  {
-    title: 'Reports',
-    href: '/admin/dashboard/reports',
-    icon: BarChart3,
-  },
+
   {
     title: 'Verification',
     href: '/admin/dashboard/verification',
