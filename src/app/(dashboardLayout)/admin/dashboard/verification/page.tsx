@@ -1,6 +1,7 @@
+import VerificationManagement from "@/components/Admin/VerificationManagement";
+
 const VerificationPage = () => {
-  return (
-    <div>VerificationPage</div>
-  )
-}
-export default VerificationPage
+  return <VerificationManagement />;
+};
+
+export default VerificationPage;
