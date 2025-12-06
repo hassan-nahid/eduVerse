@@ -19,6 +19,14 @@ export interface RegisterData {
   dateOfBirth?: string; // ISO string format
 }
 
+export interface ClaimedReward {
+  _id: string;
+  type: 'BADGE' | 'AVATAR' | 'BANNER' | 'UNLOCKED_TITLES';
+  name: string;
+  description?: string;
+  image?: string;
+}
+
 export interface AuthUser {
   _id: string;
   name: string;
@@ -26,9 +34,11 @@ export interface AuthUser {
   email: string;
   dateOfBirth?: string;
   gender?: 'MALE' | 'FEMALE' | 'OTHER';
+  // Can be direct URLs or reward IDs from claimed rewards
   avatar?: string;
   banner?: string;
   badges?: string[];
+  unlockedTitles?: string[];
   bio?: string;
   country?: string;
   city?: string;
@@ -42,6 +52,8 @@ export interface AuthUser {
   createdAt: string;
   updatedAt: string;
   verifyBadge?: boolean;
+  // Claimed rewards from reward system
+  claimedRewards?: ClaimedReward[];
 }
 
 export interface LoginResponse {
@@ -114,6 +126,41 @@ class AuthService {
    */
   async getMe(): Promise<ApiResponse<AuthUser>> {
     return apiClient.get<AuthUser>('/user/me');
+  }
+
+  /**
+   * Update user profile (bio, gender, dateOfBirth, country, city)
+   */
+  async updateProfile(userId: string, data: Partial<AuthUser>): Promise<ApiResponse<AuthUser>> {
+    return apiClient.patch<AuthUser>(`/user/${userId}`, data);
+  }
+
+  /**
+   * Select banner from claimed rewards (stores reward ID in banner field)
+   */
+  async selectBanner(userId: string, rewardId: string): Promise<ApiResponse<AuthUser>> {
+    return apiClient.patch<AuthUser>(`/user/${userId}`, { banner: rewardId });
+  }
+
+  /**
+   * Select avatar from claimed rewards (stores reward ID in avatar field)
+   */
+  async selectAvatar(userId: string, rewardId: string): Promise<ApiResponse<AuthUser>> {
+    return apiClient.patch<AuthUser>(`/user/${userId}`, { avatar: rewardId });
+  }
+
+  /**
+   * Select title from claimed rewards (stores reward ID in unlockedTitles field)
+   */
+  async selectTitle(userId: string, rewardId: string): Promise<ApiResponse<AuthUser>> {
+    return apiClient.patch<AuthUser>(`/user/${userId}`, { unlockedTitles: [rewardId] });
+  }
+
+  /**
+   * Select badges from claimed rewards (stores reward IDs in badges field, max 10)
+   */
+  async selectBadges(userId: string, rewardIds: string[]): Promise<ApiResponse<AuthUser>> {
+    return apiClient.patch<AuthUser>(`/user/${userId}`, { badges: rewardIds });
   }
 }
 
