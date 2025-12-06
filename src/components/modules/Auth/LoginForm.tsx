@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Eye, EyeOff, Mail, Lock, Chrome } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -29,6 +29,7 @@ export const LoginForm = () => {
   'use no memo'
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { login: setAuthUser } = useAuth()
   
   const { register, handleSubmit, formState: { errors, isSubmitting }, setValue, watch } = useForm<LoginFormData>({
@@ -62,8 +63,12 @@ export const LoginForm = () => {
         localStorage.removeItem('rememberedEmail')
       }
 
-      // Redirect based on user role
-      if (response.data.user.role === 'ADMIN') {
+      // Get redirect URL from query params or default based on role
+      const redirectUrl = searchParams.get('redirect')
+      
+      if (redirectUrl) {
+        router.push(redirectUrl)
+      } else if (response.data.user.role === 'ADMIN') {
         router.push('/admin/dashboard')
       } else {
         router.push('/dashboard')
@@ -128,9 +133,13 @@ export const LoginForm = () => {
   }
 
   const handleGoogleLogin = () => {
-    // Redirect to backend Google OAuth endpoint
+    // Get redirect URL from query params
+    const redirectUrl = searchParams.get('redirect')
+    
+    // Redirect to backend Google OAuth endpoint with redirect parameter
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1'
-    window.location.href = `${apiUrl}/auth/google?redirect=/dashboard`
+    const encodedRedirect = redirectUrl ? encodeURIComponent(redirectUrl) : ''
+    window.location.href = `${apiUrl}/auth/google${encodedRedirect ? `?redirect=${encodedRedirect}` : ''}`
   }
 
   return (

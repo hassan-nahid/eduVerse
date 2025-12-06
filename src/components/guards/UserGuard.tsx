@@ -6,7 +6,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { useAuth } from '@/context/AuthContext'
 import { toast } from 'sonner'
 
@@ -17,6 +17,7 @@ interface UserGuardProps {
 export function UserGuard({ children }: UserGuardProps) {
   const { user, isLoading, isAuthenticated } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
     if (!isLoading) {
@@ -25,7 +26,7 @@ export function UserGuard({ children }: UserGuardProps) {
         toast.error('Access Denied', {
           description: 'Please login to access this page.'
         })
-        router.push('/auth/login?redirect=/dashboard')
+        router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`)
         return
       }
 
@@ -38,7 +39,7 @@ export function UserGuard({ children }: UserGuardProps) {
         return
       }
     }
-  }, [user, isLoading, isAuthenticated, router])
+  }, [user, isLoading, isAuthenticated, router, pathname])
 
   // Show loading state
   if (isLoading) {

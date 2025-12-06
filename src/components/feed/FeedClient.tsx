@@ -7,7 +7,7 @@ import PostCard from '@/components/feed/PostCard'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useAuth } from '@/context/AuthContext'
 import { toast } from 'sonner'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 
 export default function FeedClient() {
   const [posts, setPosts] = useState<Post[]>([])
@@ -19,6 +19,7 @@ export default function FeedClient() {
   const observerTarget = useRef<HTMLDivElement>(null)
   const { isAuthenticated } = useAuth()
   const router = useRouter()
+  const pathname = usePathname()
 
   const loadPosts = useCallback(async (isLoadMore = false) => {
     try {
@@ -98,7 +99,7 @@ export default function FeedClient() {
   const handleLoveReaction = async (postId: string) => {
     if (!isAuthenticated) {
       toast.error('Please login to react to posts')
-      router.push('/auth/login')
+      router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`)
       return
     }
 
@@ -118,7 +119,7 @@ export default function FeedClient() {
   const handleAddComment = async (postId: string, commentText: string) => {
     if (!isAuthenticated) {
       toast.error('Please login to comment on posts')
-      router.push('/auth/login')
+      router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`)
       return
     }
 

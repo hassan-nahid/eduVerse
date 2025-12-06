@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { Calendar, Trophy, Users, Lock, Clock, Star, Zap } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -16,6 +16,7 @@ import { useAuth } from '@/context/AuthContext';
 
 const ChallengesQuizzes = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const { isAuthenticated, user } = useAuth();
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
@@ -73,7 +74,7 @@ const ChallengesQuizzes = () => {
   const handleChallengeClick = (challengeId: string) => {
     if (!isAuthenticated) {
       toast.error('Please login to participate in challenges');
-      router.push('/auth/login');
+      router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`);
       return;
     }
     router.push(`/challenges/${challengeId}`);
@@ -82,7 +83,7 @@ const ChallengesQuizzes = () => {
   const handleQuizClick = (quizId: string) => {
     if (!isAuthenticated) {
       toast.error('Please login to take quizzes');
-      router.push('/auth/login');
+      router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`);
       return;
     }
     router.push(`/quiz/${quizId}`);
@@ -152,7 +153,7 @@ const ChallengesQuizzes = () => {
               <h3 className="text-xl font-semibold mb-2">{isAuthenticated ? 'No Active Challenges' : 'Login to View Challenges'}</h3>
               <p className="text-muted-foreground mb-4">{isAuthenticated ? 'Check back later for new challenges!' : 'Please login to view and participate in challenges'}</p>
               {!isAuthenticated && (
-                <Button onClick={() => router.push('/auth/login')}>Login</Button>
+                <Button onClick={() => router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`)}>Login</Button>
               )}
             </div>
           ) : (
@@ -253,14 +254,14 @@ const ChallengesQuizzes = () => {
               <h3 className="text-xl font-semibold mb-2">{isAuthenticated ? 'No Quizzes Available' : 'Login to View Quizzes'}</h3>
               <p className="text-muted-foreground mb-4">{isAuthenticated ? 'Check back later for new quizzes!' : 'Please login to view and take quizzes'}</p>
               {!isAuthenticated && (
-                <Button onClick={() => router.push('/auth/login')}>Login</Button>
+                <Button onClick={() => router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`)}>Login</Button>
               )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {quizzes.map((quiz) => {
-                const hasCompleted = quiz.participants.some((p) => p.userId === user?._id);
-                const userResult = quiz.participants.find((p) => p.userId === user?._id);
+                const hasCompleted = quiz.participants.some((p) => p.userId._id === user?._id);
+                const userResult = quiz.participants.find((p) => p.userId._id === user?._id);
 
                 return (
                   <Card

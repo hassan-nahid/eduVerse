@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { ArrowLeft, Trophy, Clock, CheckCircle, XCircle, Lock, Users } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,7 @@ interface QuizDetailProps {
 
 const QuizDetail = ({ quizId }: QuizDetailProps) => {
   const router = useRouter();
+  const pathname = usePathname();
   const { isAuthenticated, user } = useAuth();
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -30,7 +31,7 @@ const QuizDetail = ({ quizId }: QuizDetailProps) => {
   useEffect(() => {
     if (!isAuthenticated) {
       toast.error('Please login to take quizzes');
-      router.push('/auth/login');
+      router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`);
       return;
     }
     loadQuiz();
@@ -46,11 +47,11 @@ const QuizDetail = ({ quizId }: QuizDetailProps) => {
       setQuiz(data);
 
       // Check if user has already completed this quiz
-      const hasCompleted = data.participants.some((p) => p.userId === user?._id);
+      const hasCompleted = data.participants.some((p) => p.userId._id === user?._id);
       setShowResults(hasCompleted);
 
       if (hasCompleted) {
-        const userResult = data.participants.find((p) => p.userId === user?._id);
+        const userResult = data.participants.find((p) => p.userId._id === user?._id);
         if (userResult) {
           setResult({
             score: userResult.score,
@@ -153,8 +154,8 @@ const QuizDetail = ({ quizId }: QuizDetailProps) => {
     );
   }
 
-  const hasCompleted = quiz.participants.some((p) => p.userId === user?._id);
-  const userResult = quiz.participants.find((p) => p.userId === user?._id);
+  const hasCompleted = quiz.participants.some((p) => p.userId._id === user?._id);
+  const userResult = quiz.participants.find((p) => p.userId._id === user?._id);
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">

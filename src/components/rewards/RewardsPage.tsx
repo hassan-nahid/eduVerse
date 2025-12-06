@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Image from 'next/image';
 import { Trophy, Lock, Check, ShoppingCart, Gift, Award, Crown, User, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,6 +24,7 @@ import { useAuth } from '@/context/AuthContext';
 
 const RewardsPage = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const { isAuthenticated, user, refreshUser } = useAuth();
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,7 +64,7 @@ const RewardsPage = () => {
   const handleClaimClick = (reward: Reward) => {
     if (!isAuthenticated || !user) {
       toast.error('Please login to claim rewards');
-      router.push('/auth/login');
+      router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`);
       return;
     }
 
@@ -383,7 +384,7 @@ const RewardsPage = () => {
             {!isAuthenticated ? 'Please login to view and claim rewards' : activeTab === 'all' ? 'Check back later for new rewards!' : 'Start claiming rewards to see them here!'}
           </p>
           {!isAuthenticated && (
-            <Button onClick={() => router.push('/auth/login')}>Login</Button>
+            <Button onClick={() => router.push(`/auth/login?redirect=${encodeURIComponent(pathname)}`)}>Login</Button>
           )}
         </div>
       ) : (

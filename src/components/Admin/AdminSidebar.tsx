@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   Menu,
   UserCheck,
+  Brain,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -56,6 +57,11 @@ const navItems: NavItem[] = [
     title: 'Rewards',
     href: '/admin/dashboard/rewards',
     icon: Gift,
+  },
+  {
+    title: 'Plans',
+    href: '/admin/dashboard/plans',
+    icon: Brain,
   },
   {
     title: 'Subscriptions',
