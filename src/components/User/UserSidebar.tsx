@@ -81,7 +81,7 @@ export function UserSidebar({ isCollapsed, onToggle, isMobileOpen, onMobileClose
   const sidebarContent = (
     <>
       <div className="flex h-16 items-center justify-between border-b gap-6 px-4">
-        <Link href="/dashboard" className="flex items-center gap-2" onClick={onMobileClose}>
+        <Link href="/" className="flex items-center gap-2" onClick={onMobileClose}>
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             <LayoutDashboard className="h-5 w-5" />
           </div>

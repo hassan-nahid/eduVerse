@@ -60,6 +60,16 @@ export interface AdminGetSubscriptionsResponse {
   };
 }
 
+export interface CreateSubscriptionPayload {
+  planId: string;
+  totalMonth: number;
+}
+
+export interface CreateSubscriptionResponse {
+  paymentUrl: string;
+  subscription: Subscription;
+}
+
 export const subscriptionService = {
   async adminGetAllSubscriptions(
     params: Record<string, string>
@@ -77,5 +87,10 @@ export const subscriptionService = {
   async getUserSubscriptions(): Promise<Subscription[]> {
     const response = await apiClient.get('/subscription/my-subscriptions');
     return response.data as Subscription[];
+  },
+
+  async createSubscription(payload: CreateSubscriptionPayload): Promise<CreateSubscriptionResponse> {
+    const response = await apiClient.post<CreateSubscriptionResponse>('/subscription', payload);
+    return response.data;
   },
 };
